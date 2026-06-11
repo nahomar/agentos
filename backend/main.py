@@ -74,7 +74,9 @@ from backend.semantic_bus.bus import SemanticBus
 from backend.semantic_bus.builtin_apps import get_builtin_apps
 from backend.execution.speculative import (
     SpeculativeEngine, time_based_predictor, context_based_predictor,
+    make_pattern_predictor,
 )
+from backend.command.pipeline import CommandPipeline
 from backend.verification.layer import VerificationLayer
 from backend.identity.vault import IdentityVault
 
@@ -88,9 +90,19 @@ for app_manifest in get_builtin_apps():
 speculative_engine = SpeculativeEngine()
 speculative_engine.add_predictor(time_based_predictor)
 speculative_engine.add_predictor(context_based_predictor)
+speculative_engine.add_predictor(make_pattern_predictor(context_engine.patterns))
 
 verification_layer = VerificationLayer(cap_config)
 identity_vault = IdentityVault()
+
+# Natural-language command pipeline (the Jarvis path)
+command_pipeline = CommandPipeline(
+    semantic_bus=semantic_bus,
+    verification_layer=verification_layer,
+    brain=orchestrator.brain,
+    context_getter=context_engine.get_context,
+    speculative_engine=speculative_engine,
+)
 
 # Kernel subsystems
 from backend.kernel.ipc import IPCBroker
@@ -177,8 +189,17 @@ async def lifespan(app: FastAPI):
     ))
     asyncio.create_task(watchdog.start())
 
-    # Start Telegram gateway if configured
+    # Start Telegram gateway if configured — messages route through the
+    # command pipeline, so you can text your phone OS like an assistant
     if config.api_keys.telegram_bot_token:
+        async def _gateway_command_handler(msg):
+            result = await command_pipeline.handle(msg.text, source=msg.channel)
+            reply = result["reply"]
+            if result.get("requires_confirmation"):
+                reply += f"\nReply: confirm {result['pending_id']} (or deny {result['pending_id']})"
+            return reply
+
+        telegram_channel.set_message_handler(_gateway_command_handler)
         gateway.register_channel("telegram", telegram_channel)
         asyncio.create_task(telegram_channel.start())
 
@@ -314,7 +335,31 @@ async def _handle_ws_message(data: dict):
 
     elif msg_type == "user_command":
         text = data.get("text", "")
-        logger.info(f"User command: {text}")
+        result = await command_pipeline.handle(text, source="ws")
+        from backend.bus import Message, MessageType
+        await orchestrator.bus.publish(Message(
+            sender="AgentOS",
+            recipient="user",
+            type=MessageType.USER_ALERT,
+            content=result["reply"],
+            metadata={
+                "emoji": "🤖", "color": "#9B59B6", "type": "command_reply",
+                **{k: v for k, v in result.items() if k != "reply"},
+            },
+        ))
+
+    elif msg_type == "confirm_action":
+        pending_id = data.get("pending_id", "")
+        approved = bool(data.get("approved", False))
+        result = await command_pipeline.confirm(pending_id, approved)
+        from backend.bus import Message, MessageType
+        await orchestrator.bus.publish(Message(
+            sender="AgentOS",
+            recipient="user",
+            type=MessageType.USER_ALERT,
+            content=result["reply"],
+            metadata={"emoji": "🤖", "color": "#9B59B6", "type": "command_reply"},
+        ))
 
     elif msg_type == "trigger_agent":
         agent_name = data.get("agent", "")
@@ -537,6 +582,38 @@ async def get_bus_stats():
 async def get_actions_context(tags: str = ""):
     tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else None
     return {"context": semantic_bus.get_actions_context(tag_list)}
+
+
+# === Command Pipeline (natural language -> action) ===
+
+class CommandRequest(BaseModel):
+    text: str
+
+    class Config:
+        str_max_length = 2000
+
+
+@app.post("/api/command")
+async def run_command(req: CommandRequest):
+    return await command_pipeline.handle(req.text, source="api")
+
+
+class ConfirmRequest(BaseModel):
+    pending_id: str
+    approved: bool = True
+
+    class Config:
+        str_max_length = 64
+
+
+@app.post("/api/command/confirm")
+async def confirm_command(req: ConfirmRequest):
+    return await command_pipeline.confirm(req.pending_id, req.approved)
+
+
+@app.get("/api/command/pending")
+async def pending_commands():
+    return {"pending": command_pipeline.get_pending()}
 
 
 # === Speculative Execution ===

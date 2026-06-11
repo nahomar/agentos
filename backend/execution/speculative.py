@@ -179,6 +179,41 @@ class SpeculativeEngine:
 
 # === Built-in Predictors ===
 
+def make_pattern_predictor(pattern_engine):
+    """Build a predictor backed by the learned-habits PatternEngine, closing
+    the loop from pattern learning to speculative pre-warming."""
+
+    # Predicted app -> read-only action worth pre-warming
+    APP_ACTIONS = {
+        "spotify": ("spotify.get_now_playing", {}),
+        "music": ("spotify.get_now_playing", {}),
+        "messages": ("messages.get_unread", {"limit": 5}),
+        "calendar": ("calendar.get_upcoming", {"hours": 12}),
+        "maps": ("maps.find_nearby", {"query": "coffee", "radius_km": 3}),
+    }
+
+    async def pattern_predictor(context: dict) -> List[PredictedAction]:
+        predictions = []
+        try:
+            for p in pattern_engine.predict(context):
+                if p.get("type") != "app_usage":
+                    continue
+                app = str(p.get("value", "")).lower()
+                for key, (action_id, params) in APP_ACTIONS.items():
+                    if key in app:
+                        predictions.append(PredictedAction(
+                            action_id=action_id,
+                            params=params,
+                            confidence=min(float(p.get("confidence", 0)), 0.9),
+                            reason=f"Learned habit: {p.get('prediction', app)}",
+                        ))
+                        break
+        except Exception as e:
+            logger.debug(f"Pattern predictor error: {e}")
+        return predictions
+
+    return pattern_predictor
+
 async def time_based_predictor(context: dict) -> List[PredictedAction]:
     """Predict actions based on time of day."""
     predictions = []

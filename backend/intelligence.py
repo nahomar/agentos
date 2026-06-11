@@ -147,6 +147,17 @@ Respond with just the category name, nothing else."""
 
         return None
 
+    async def extract(self, system: str, prompt: str, max_tokens: int = 300) -> Optional[str]:
+        """Raw completion without agent-personality framing — for structured
+        extraction like command parsing. Returns None if no AI available."""
+        if self.has_claude:
+            result = await self._claude_think(system, prompt, max_tokens)
+            if result:
+                return result
+        if self.has_gemini:
+            return await self._gemini_think(system, prompt, max_tokens)
+        return None
+
     async def summarize(self, items: List[str], style: str = "brief") -> Optional[str]:
         """Summarize a list of items. Returns summary or None."""
 
@@ -167,8 +178,9 @@ Focus on the most important and actionable insights. Be concise."""
         try:
             import anthropic
             client = anthropic.AsyncAnthropic(api_key=self._anthropic_key)
+            # claude-sonnet-4-20250514 is deprecated (retires 2026-06-15)
             response = await client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-opus-4-8",
                 max_tokens=max_tokens,
                 system=system,
                 messages=[{"role": "user", "content": prompt}],
