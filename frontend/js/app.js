@@ -315,21 +315,31 @@ class CommandBar {
         this.ws = ws;
         this.input = document.getElementById('command-input');
         this.toasts = document.getElementById('command-toasts');
+        this.lastInputWasVoice = false;
+        this.voice = new VoiceControl(this);
 
         document.getElementById('command-bar').addEventListener('submit', (e) => {
             e.preventDefault();
-            const text = this.input.value.trim();
-            if (!text) return;
-            this.ws.send({ type: 'user_command', text });
-            this.showToast(`🗣 ${text}`, 'user');
-            this.input.value = '';
+            this.submit(this.input.value, false);
         });
+    }
+
+    submit(text, viaVoice) {
+        text = (text || '').trim();
+        if (!text) return;
+        this.lastInputWasVoice = viaVoice;
+        this.ws.send({ type: 'user_command', text });
+        this.showToast(`🗣 ${text}`, 'user');
+        this.input.value = '';
     }
 
     // Render an assistant reply; pop a confirm dialog for high-risk actions
     handleReply(data) {
         const meta = data.metadata || {};
         this.showToast(data.content || '', 'assistant');
+        if (this.lastInputWasVoice) {
+            this.voice.speak(data.content || '');
+        }
         if (meta.requires_confirmation && meta.pending_id) {
             this._confirmDialog(meta);
         }
@@ -378,6 +388,63 @@ class CommandBar {
         };
 
         document.body.appendChild(overlay);
+    }
+}
+
+// ── Voice Control (speech in, speech out) ────────────────────
+class VoiceControl {
+    constructor(commandBar) {
+        this.commandBar = commandBar;
+        this.button = document.getElementById('command-mic');
+        this.listening = false;
+        this.recognition = null;
+
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+            this.button.style.display = 'none';
+            return;
+        }
+
+        this.recognition = new SR();
+        this.recognition.lang = navigator.language || 'en-US';
+        this.recognition.interimResults = false;
+        this.recognition.maxAlternatives = 1;
+
+        this.recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            this.commandBar.submit(text, true);
+        };
+        this.recognition.onend = () => this._setListening(false);
+        this.recognition.onerror = () => this._setListening(false);
+
+        this.button.addEventListener('click', () => this.toggle());
+    }
+
+    toggle() {
+        if (!this.recognition) return;
+        if (this.listening) {
+            this.recognition.stop();
+            return;
+        }
+        try {
+            this.recognition.start();
+            this._setListening(true);
+        } catch (e) {
+            this._setListening(false);
+        }
+    }
+
+    _setListening(on) {
+        this.listening = on;
+        this.button.classList.toggle('listening', on);
+    }
+
+    speak(text) {
+        if (!('speechSynthesis' in window) || !text) return;
+        speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text.replace(/[—🔐⚡🛑🤖]/g, ''));
+        utterance.rate = 1.05;
+        speechSynthesis.speak(utterance);
     }
 }
 

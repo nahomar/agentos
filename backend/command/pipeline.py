@@ -15,6 +15,7 @@ import logging
 import re
 import time
 import uuid
+from collections import deque
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger("command")
@@ -37,6 +38,7 @@ class CommandPipeline:
         self.context_getter = context_getter
         self.speculative = speculative_engine
         self._pending: Dict[str, dict] = {}  # pending_id -> {action_id, params, created}
+        self._history: deque = deque(maxlen=10)  # recent (user, assistant) exchanges
 
     # === Entry points ===
 
@@ -58,9 +60,12 @@ class CommandPipeline:
             intent = await self._parse_with_ai(text)
 
         if intent is None:
-            return await self._chat_fallback(text)
+            result = await self._chat_fallback(text)
+        else:
+            result = await self._execute(intent["action_id"], intent["params"], source)
 
-        return await self._execute(intent["action_id"], intent["params"], source)
+        self._history.append((text, result.get("reply", "")))
+        return result
 
     async def confirm(self, pending_id: str, approved: bool) -> dict:
         """Resolve a pending high-risk action."""
@@ -234,10 +239,20 @@ class CommandPipeline:
 
     # === AI parser (fallback for free-form phrasings) ===
 
+    def _history_context(self) -> str:
+        if not self._history:
+            return ""
+        lines = ["Recent conversation:"]
+        for user, assistant in list(self._history)[-5:]:
+            lines.append(f"  User: {user}")
+            lines.append(f"  Assistant: {assistant}")
+        return "\n".join(lines) + "\n\n"
+
     async def _parse_with_ai(self, text: str) -> Optional[dict]:
         actions_context = self.bus.get_actions_context()
         prompt = (
             f"{actions_context}\n\n"
+            f"{self._history_context()}"
             f'User command: "{text}"\n\n'
             "If the command maps to one of the actions above, respond with ONLY a "
             'JSON object: {"action_id": "<id>", "params": {<params>}}. '
@@ -278,7 +293,7 @@ class CommandPipeline:
             answer = await self.brain.think(
                 agent_name="AgentOS",
                 agent_personality="A capable, concise personal assistant running on the user's device.",
-                task=text,
+                task=f"{self._history_context()}{text}",
                 context=ctx,
             )
             if answer:

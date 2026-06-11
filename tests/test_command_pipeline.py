@@ -148,6 +148,18 @@ def test_speculative_cache_serves_command():
     asyncio.run(run())
 
 
+def test_conversation_history_recorded():
+    async def run():
+        pipeline, _ = _make_pipeline()
+        await pipeline.handle("volume 25")
+        await pipeline.handle("what's on my calendar")
+        assert len(pipeline._history) == 2
+        assert pipeline._history[0][0] == "volume 25"
+        assert pipeline._history_context().startswith("Recent conversation:")
+
+    asyncio.run(run())
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):

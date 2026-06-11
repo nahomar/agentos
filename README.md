@@ -26,10 +26,35 @@ All visible on a **stunning animated wallpaper** with floating agent avatars, gl
 
 ---
 
+## Talk to It
+
+AgentOS isn't just ambient — it listens. Type (or speak 🎙) into the command bar
+on the wallpaper, text the Telegram bot, or hit the REST API:
+
+```
+"play some jazz"            → music starts
+"what's on my calendar"     → instant answer (often pre-warmed before you ask)
+"volume 40" / "dnd on"      → device settings change
+"text Sam: running late"    → 🔐 high-risk: asks you to confirm first
+"send $50 to John"          → verified against your payment limits, then confirmed
+```
+
+Commands flow through a three-stage safety pipeline: **deterministic parsing**
+(16 command shapes, AI fallback for free-form phrasing) → **non-AI verification
+layer** (payment limits, rate limits, duplicate detection) → **semantic bus
+execution**. HIGH/CRITICAL actions never run without explicit confirmation —
+tap Confirm in the UI, reply `confirm <id>` in Telegram, or POST to
+`/api/command/confirm`.
+
+Voice works out of the box in Safari/Chrome (Web Speech API): tap the mic,
+speak, and replies are spoken back.
+
+---
+
 ## Quick Start (30 seconds)
 
 ```bash
-git clone https://github.com/nahommohan/agentos.git
+git clone https://github.com/nahomar/agentos.git
 cd agentos
 ./start.sh
 ```
@@ -167,9 +192,12 @@ GET  /api/feed           # Activity feed
 GET  /api/context        # Current user context
 GET  /api/capabilities   # Available capabilities
 GET  /api/rules          # Proactive rules
-POST /api/context        # Update user context
+POST /api/context        # Update user context (triggers immediate rule evaluation)
 POST /api/agents/{id}/trigger  # Manually trigger agent
-WS   /ws                 # Real-time bidirectional
+POST /api/command        # Natural-language command ("play some jazz")
+POST /api/command/confirm  # Approve/deny a pending high-risk action
+GET  /api/command/pending  # List pending confirmations
+WS   /ws                 # Real-time bidirectional (user_command, confirm_action)
 ```
 
 ---
@@ -222,13 +250,14 @@ cd docker && docker-compose up
 
 ## Roadmap
 
+- [x] Natural-language commands with voice (type, speak, or Telegram)
+- [x] Pattern learning feeding speculative pre-execution
+- [x] Auto-actions with approval (verification layer + confirmation flow)
 - [ ] Native iOS app (CoreLocation, HealthKit, Camera, Siri)
+- [ ] Android companion app executing device actions (messages, calls, camera)
 - [ ] Agent marketplace with community plugins
-- [ ] Pattern learning (predicts what you need)
-- [ ] Auto-respond to messages (with approval)
 - [ ] Natural language agent creation ("make an agent that...")
 - [ ] Local LLM support (Ollama/MLX)
-- [ ] Android companion app
 
 ---
 
