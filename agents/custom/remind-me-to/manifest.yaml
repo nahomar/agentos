@@ -1,0 +1,13 @@
+agent:
+  actions:
+  - template: remind me to drink water every 2 hours
+    type: notify
+  color: '#9B59B6'
+  description: remind me to drink water every 2 hours
+  emoji: 💧
+  id: remind-me-to
+  name: Remind Me
+  personality: helpful and punctual
+  triggers:
+  - seconds: 7200
+    type: interval

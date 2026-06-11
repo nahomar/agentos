@@ -1,0 +1,24 @@
+agent:
+  id: "contacts"
+  name: "Contacts"
+  emoji: "👥"
+  color: "#2ECC71"
+  app_name: "Contacts"
+  personality: "caring, socially aware, reminds you to stay connected with people who matter"
+  description: "Monitors communication patterns, reminds you to call or text important contacts"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "communication.sms"
+    - "communication.call"
+
+  capabilities_provided:
+    - "contacts.reminders"
+    - "contacts.patterns"
+
+  triggers:
+    - type: "interval"
+      seconds: 60
+
+  class: "agent.ContactsAgent"

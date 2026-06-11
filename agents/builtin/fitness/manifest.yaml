@@ -1,0 +1,23 @@
+agent:
+  id: "fitness"
+  name: "Fitness"
+  emoji: "💪"
+  color: "#27AE60"
+  app_name: "Health"
+  personality: "encouraging coach, positive energy, celebrates small wins"
+  description: "Tracks activity, suggests movement breaks, monitors wellness patterns"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "info.weather"
+
+  capabilities_provided:
+    - "fitness.activity_summary"
+    - "fitness.movement_reminder"
+
+  triggers:
+    - type: "interval"
+      seconds: 45
+
+  class: "agent.FitnessAgent"

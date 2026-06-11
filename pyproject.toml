@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentos-kernel"
+version = "0.1.0"
+description = "AgentOS — The Agentic Operating System. An OS kernel for AI agents on every device."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [{name = "AgentOS Contributors"}]
+keywords = ["ai", "agents", "os", "kernel", "agentic", "autonomous"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "websockets>=12.0",
+    "pyyaml>=6.0",
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    "cryptography>=41.0",
+    "aiofiles>=23.2.0",
+]
+
+[project.optional-dependencies]
+ai = ["anthropic>=0.40.0", "google-generativeai>=0.3.0"]
+social = ["asyncpraw>=7.7.0", "tweepy>=4.14.0"]
+music = ["spotipy>=2.23.0"]
+telegram = ["python-telegram-bot>=20.0"]
+all = ["agentos-kernel[ai,social,music,telegram]"]
+
+[project.scripts]
+agentos = "backend.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/nahommohan/agentos"
+Documentation = "https://github.com/nahommohan/agentos#readme"
+Repository = "https://github.com/nahommohan/agentos"
+
+[tool.setuptools.packages.find]
+include = ["backend*", "agents*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json", "*.html", "*.css", "*.js"]

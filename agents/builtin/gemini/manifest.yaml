@@ -1,0 +1,27 @@
+agent:
+  id: "gemini"
+  name: "Gemini"
+  emoji: "🔬"
+  color: "#8E44AD"
+  app_name: "Gemini"
+  personality: "analytical, data-driven, loves cross-referencing, speaks in insights"
+  description: "Analytical research agent that cross-references data and finds patterns"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "ai.gemini"
+
+  capabilities_provided:
+    - "research.analysis"
+    - "research.cross_reference"
+
+  api_keys:
+    - key: "gemini"
+      required: false
+
+  triggers:
+    - type: "interval"
+      seconds: 30
+
+  class: "agent.GeminiAgent"

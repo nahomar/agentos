@@ -1,0 +1,27 @@
+agent:
+  id: "x"
+  name: "X"
+  emoji: "🐦"
+  color: "#1DA1F2"
+  app_name: "X (Twitter)"
+  personality: "fast-paced, breaking-news energy, speaks in headlines, always first to know"
+  description: "Tracks trending topics, curates tweets, and monitors your X timeline"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "content.twitter"
+
+  capabilities_provided:
+    - "content.trending_topics"
+    - "content.tweet_summary"
+
+  api_keys:
+    - key: "x_bearer_token"
+      required: false
+
+  triggers:
+    - type: "interval"
+      seconds: 30
+
+  class: "agent.XAgent"

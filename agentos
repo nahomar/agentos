@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""AgentOS CLI — manage your agent ecosystem."""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+
+def cmd_list(args):
+    """List all agents."""
+    import httpx
+    try:
+        r = httpx.get(f"http://localhost:{args.port}/api/agents", timeout=5)
+        agents = r.json()
+        print(f"\n  {'Emoji':6s} {'Name':14s} {'App':14s} {'Status':10s} Task")
+        print(f"  {'─'*6} {'─'*14} {'─'*14} {'─'*10} {'─'*30}")
+        for a in agents:
+            print(f"  {a['emoji']:6s} {a['name']:14s} {a['app']:14s} {a['status']:10s} {a.get('current_task','')[:30]}")
+        print(f"\n  {len(agents)} agents total\n")
+    except Exception as e:
+        print(f"Error: {e}. Is the server running?")
+
+
+def cmd_plugins(args):
+    """List all plugins."""
+    import httpx
+    try:
+        r = httpx.get(f"http://localhost:{args.port}/api/plugins", timeout=5)
+        plugins = r.json()
+        print(f"\n  {'Emoji':6s} {'Name':14s} {'Category':10s} {'Status':10s} Description")
+        print(f"  {'─'*6} {'─'*14} {'─'*10} {'─'*10} {'─'*30}")
+        for p in plugins:
+            status = "loaded" if p.get("loaded") else "available"
+            print(f"  {p['emoji']:6s} {p['name']:14s} {p['category']:10s} {status:10s} {p.get('description','')[:30]}")
+        print(f"\n  {len(plugins)} plugins total\n")
+    except Exception as e:
+        print(f"Error: {e}. Is the server running?")
+
+
+def cmd_create(args):
+    """Create a new agent from natural language."""
+    description = " ".join(args.description)
+    if not description:
+        description = input("Describe your agent: ")
+
+    import httpx
+    try:
+        r = httpx.post(
+            f"http://localhost:{args.port}/api/agents/create",
+            json={"description": description},
+            timeout=30,
+        )
+        result = r.json()
+        if result.get("success"):
+            print(f"\n  ✓ Agent created: {result.get('emoji','')} {result.get('name','')}")
+            print(f"    ID: {result.get('agent_id','')}")
+            print(f"    Manifest: {result.get('manifest_path','')}")
+            print(f"\n  Restart the server to load the new agent.\n")
+        else:
+            print(f"\n  ✗ Error: {result.get('error','Unknown error')}\n")
+    except Exception as e:
+        print(f"Error: {e}. Is the server running?")
+
+
+def cmd_status(args):
+    """Show system status."""
+    import httpx
+    try:
+        r = httpx.get(f"http://localhost:{args.port}/api/health", timeout=5)
+        h = r.json()
+        r2 = httpx.get(f"http://localhost:{args.port}/api/patterns", timeout=5)
+        p = r2.json()
+        stats = p.get("stats", {})
+
+        print(f"\n  AgentOS Status")
+        print(f"  {'─'*40}")
+        print(f"  Agents:       {h.get('agents',0)} ({h.get('active',0)} active)")
+        print(f"  Capabilities: {h.get('capabilities',0)}")
+        print(f"  Rules:        {h.get('rules',0)}")
+        print(f"  Patterns:     {stats.get('learned_patterns',0)} learned")
+        print(f"  Behavior log: {stats.get('behavior_logs',0)} snapshots")
+        print()
+    except Exception as e:
+        print(f"Error: {e}. Is the server running?")
+
+
+def cmd_trigger(args):
+    """Manually trigger an agent."""
+    import httpx
+    try:
+        r = httpx.post(f"http://localhost:{args.port}/api/agents/{args.agent}/trigger", timeout=10)
+        result = r.json()
+        if result.get("success"):
+            print(f"  ✓ Triggered agent: {args.agent}")
+        else:
+            print(f"  ✗ Failed to trigger: {args.agent}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="agentos",
+        description="AgentOS — Your Phone's AI Brain",
+    )
+    parser.add_argument("--port", type=int, default=8000, help="Server port")
+
+    sub = parser.add_subparsers(dest="command")
+
+    sub.add_parser("list", help="List all agents")
+    sub.add_parser("plugins", help="List all plugins")
+    sub.add_parser("status", help="Show system status")
+
+    create_p = sub.add_parser("create", help="Create a new agent from description")
+    create_p.add_argument("description", nargs="*", help="Natural language description")
+
+    trigger_p = sub.add_parser("trigger", help="Manually trigger an agent")
+    trigger_p.add_argument("agent", help="Agent name")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        return
+
+    cmd_map = {
+        "list": cmd_list,
+        "plugins": cmd_plugins,
+        "create": cmd_create,
+        "status": cmd_status,
+        "trigger": cmd_trigger,
+    }
+
+    cmd_map[args.command](args)
+
+
+if __name__ == "__main__":
+    main()

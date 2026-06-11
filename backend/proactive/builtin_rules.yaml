@@ -1,0 +1,187 @@
+rules:
+  - id: "morning_briefing"
+    name: "Morning Briefing"
+    description: "Daily morning briefing with agent highlights"
+    conditions:
+      - field: "time_of_day"
+        operator: "eq"
+        value: "early_morning"
+      - field: "engagement_level"
+        operator: "eq"
+        value: "active"
+    actions:
+      - type: "notify"
+        params:
+          title: "Good Morning ☀️"
+          body: "Your agents have been working while you slept. Check the feed for highlights!"
+    cooldown_minutes: 720
+    priority: 3
+
+  - id: "focus_mode"
+    name: "Focus Mode Detected"
+    description: "Detects when user is in deep work mode"
+    conditions:
+      - field: "inferred_mood"
+        operator: "eq"
+        value: "focused"
+      - field: "app_duration_minutes"
+        operator: "gt"
+        value: 15
+    actions:
+      - type: "suggest"
+        params:
+          message: "🎯 You're in the zone! I've silenced non-urgent updates. Keep going!"
+    cooldown_minutes: 120
+    priority: 2
+
+  - id: "sedentary_reminder"
+    name: "Movement Reminder"
+    description: "Reminds user to move after sitting too long"
+    conditions:
+      - field: "sedentary_minutes"
+        operator: "gt"
+        value: 120
+      - field: "time_of_day"
+        operator: "not_in"
+        value: ["late_night", "night"]
+    actions:
+      - type: "suggest"
+        params:
+          message: "🚶 You've been sitting for a while. Time for a quick stretch or walk?"
+    cooldown_minutes: 120
+    priority: 2
+
+  - id: "golden_hour_photo"
+    name: "Golden Hour Photo Opportunity"
+    description: "Suggests taking photos during golden hour with nice weather"
+    conditions:
+      - field: "is_golden_hour"
+        operator: "is_true"
+        value: true
+      - field: "weather.condition"
+        operator: "in"
+        value: ["clear", "partly_cloudy", "clouds"]
+    actions:
+      - type: "notify"
+        params:
+          title: "Golden Hour 📸"
+          body: "Beautiful light right now! Perfect time for photos."
+    cooldown_minutes: 720
+    priority: 1
+
+  - id: "nice_weather_walk"
+    name: "Good Weather Walk"
+    description: "Suggests a walk when weather is nice and user has been sedentary"
+    conditions:
+      - field: "weather.temperature_f"
+        operator: "between"
+        value: [60, 85]
+      - field: "weather.condition"
+        operator: "in"
+        value: ["clear", "partly_cloudy", "clouds"]
+      - field: "sedentary_minutes"
+        operator: "gt"
+        value: 90
+    actions:
+      - type: "suggest"
+        params:
+          message: "☀️ It's {weather.temperature_f}°F and {weather.description} outside. Perfect walking weather!"
+    cooldown_minutes: 240
+    priority: 2
+
+  - id: "late_night_winddown"
+    name: "Late Night Wind Down"
+    description: "Suggests winding down when it's late"
+    conditions:
+      - field: "time_of_day"
+        operator: "eq"
+        value: "night"
+      - field: "hour"
+        operator: "gte"
+        value: 22
+      - field: "engagement_level"
+        operator: "eq"
+        value: "active"
+    actions:
+      - type: "suggest"
+        params:
+          message: "🌙 It's getting late. Consider winding down — your agents will keep working while you rest."
+    cooldown_minutes: 480
+    priority: 2
+
+  - id: "hydration_reminder"
+    name: "Hydration Reminder"
+    description: "Periodic reminder to stay hydrated"
+    conditions:
+      - field: "time_of_day"
+        operator: "not_in"
+        value: ["late_night"]
+      - field: "engagement_level"
+        operator: "neq"
+        value: "idle"
+    actions:
+      - type: "notify"
+        params:
+          title: "💧 Hydration Check"
+          body: "Don't forget to drink water! Stay hydrated."
+    cooldown_minutes: 120
+    priority: 1
+
+  - id: "weekend_explore"
+    name: "Weekend Exploration"
+    description: "Suggests exploring on weekends with nice weather"
+    conditions:
+      - field: "is_weekend"
+        operator: "is_true"
+        value: true
+      - field: "time_of_day"
+        operator: "in"
+        value: ["morning", "midday", "afternoon"]
+      - field: "weather.condition"
+        operator: "in"
+        value: ["clear", "partly_cloudy"]
+    actions:
+      - type: "suggest"
+        params:
+          message: "🌤️ Beautiful weekend weather! Your agents can find interesting places nearby."
+    cooldown_minutes: 1440
+    priority: 1
+
+  - id: "productivity_check"
+    name: "Afternoon Productivity Check"
+    description: "Afternoon check-in to help reprioritize"
+    conditions:
+      - field: "time_of_day"
+        operator: "eq"
+        value: "afternoon"
+      - field: "hour"
+        operator: "eq"
+        value: 14
+    actions:
+      - type: "notify"
+        params:
+          title: "📋 Afternoon Check-in"
+          body: "How's your day going? Want me to reprioritize your tasks for the rest of the day?"
+    cooldown_minutes: 1440
+    priority: 2
+
+  - id: "idle_checkin"
+    name: "Idle Check-in"
+    description: "Checks on user after extended idle time"
+    conditions:
+      - field: "engagement_level"
+        operator: "eq"
+        value: "idle"
+      - field: "sedentary_minutes"
+        operator: "gt"
+        value: 180
+      - field: "time_of_day"
+        operator: "not_in"
+        value: ["late_night", "night"]
+    actions:
+      - type: "notify"
+        params:
+          title: "👋 Hey there"
+          body: "You've been away for a while. Your agents have been busy — check your feed for updates!"
+    cooldown_minutes: 360
+    priority: 2

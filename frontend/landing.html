@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentOS — The Agentic Operating System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(160deg, #0a0a1a 0%, #0d0b2e 30%, #120a28 60%, #0a0a1a 100%);
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+        }
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            background: rgba(139, 92, 246, 0.1);
+            font-size: 13px;
+            color: #a78bfa;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        h1 {
+            font-size: clamp(36px, 6vw, 72px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            position: relative;
+            background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            font-size: clamp(16px, 2.5vw, 22px);
+            color: rgba(255,255,255,0.6);
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        .cta-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+        }
+        .btn {
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: #6366f1;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #4f46e5; transform: translateY(-2px); }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+        .stats {
+            display: flex;
+            gap: 48px;
+            margin-top: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+        }
+        .stat { text-align: center; }
+        .stat-num {
+            font-size: 32px;
+            font-weight: 800;
+            color: #a78bfa;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+        }
+        .features {
+            padding: 100px 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .features h2 {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .card {
+            padding: 28px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .card-emoji { font-size: 32px; margin-bottom: 12px; }
+        .card h3 { font-size: 18px; margin-bottom: 8px; }
+        .card p { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+        .agents-section {
+            padding: 80px 20px;
+            text-align: center;
+        }
+        .agents-section h2 { font-size: 36px; margin-bottom: 40px; }
+        .agent-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .agent-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 14px;
+        }
+        .install-section {
+            padding: 80px 20px;
+            text-align: center;
+        }
+        .install-section h2 { font-size: 36px; margin-bottom: 16px; }
+        .install-section p { color: rgba(255,255,255,0.5); margin-bottom: 32px; }
+        .code-block {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px 28px;
+            font-family: 'SF Mono', monospace;
+            font-size: 15px;
+            display: inline-block;
+            text-align: left;
+            color: #a78bfa;
+        }
+        footer {
+            padding: 40px 20px;
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 13px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        footer a { color: #6366f1; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="badge">Open Source &middot; Privacy First &middot; Works Offline</div>
+        <h1>Your Phone's<br>AI Brain</h1>
+        <p class="subtitle">
+            An operating system kernel for AI agents. 13 autonomous agents manage your
+            digital life — research, music, photos, contacts, fitness — all visible on
+            a stunning animated wallpaper.
+        </p>
+        <div class="cta-group">
+            <a href="/?token=" class="btn btn-primary" id="launch-btn">Launch Wallpaper</a>
+            <a href="https://github.com/nahommohan/agentos" class="btn btn-secondary">View on GitHub</a>
+        </div>
+        <div class="stats">
+            <div class="stat"><div class="stat-num" id="s-agents">13</div><div class="stat-label">Agents</div></div>
+            <div class="stat"><div class="stat-num">22</div><div class="stat-label">Bus Actions</div></div>
+            <div class="stat"><div class="stat-num">15</div><div class="stat-label">Capabilities</div></div>
+            <div class="stat"><div class="stat-num">8</div><div class="stat-label">Safety Rules</div></div>
+        </div>
+    </div>
+
+    <div class="features">
+        <h2>Not a chatbot. An OS kernel.</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="card-emoji">🔌</div>
+                <h3>Semantic Bus</h3>
+                <p>Apps publish typed actions — agents call functions, not click buttons. 10x faster than screen scraping. MCP-compatible.</p>
+            </div>
+            <div class="card">
+                <div class="card-emoji">⚡</div>
+                <h3>Speculative Execution</h3>
+                <p>Predicts your next 3 actions and pre-computes results. By the time you ask, the answer is ready.</p>
+            </div>
+            <div class="card">
+                <div class="card-emoji">🛡️</div>
+                <h3>Deterministic Verification</h3>
+                <p>Non-AI safety layer. 8 rules verify every action before execution. Rate limits, dupe detection, payment caps. Can't hallucinate.</p>
+            </div>
+            <div class="card">
+                <div class="card-emoji">🔐</div>
+                <h3>Identity Vault</h3>
+                <p>AES-256 encrypted credential store. Agents get scoped session tokens, never raw credentials. Auto-refreshes OAuth.</p>
+            </div>
+            <div class="card">
+                <div class="card-emoji">📂</div>
+                <h3>Virtual Namespace</h3>
+                <p>Plan 9-inspired. Query /agents/Claude/status, /kernel/watchdog/health — everything is an endpoint.</p>
+            </div>
+            <div class="card">
+                <div class="card-emoji">🧠</div>
+                <h3>Plugin Agents</h3>
+                <p>Create agents with YAML alone — no code needed. Or write Python for complex logic. Community marketplace ready.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="agents-section">
+        <h2>13 Built-in Agents</h2>
+        <div class="agent-grid">
+            <div class="agent-pill">🧠 Claude</div>
+            <div class="agent-pill">🔬 Gemini</div>
+            <div class="agent-pill">🎵 Spotify</div>
+            <div class="agent-pill">🔥 Reddit</div>
+            <div class="agent-pill">🐦 X</div>
+            <div class="agent-pill">📰 News</div>
+            <div class="agent-pill">⛅ Weather</div>
+            <div class="agent-pill">📸 Photos</div>
+            <div class="agent-pill">👥 Contacts</div>
+            <div class="agent-pill">📅 Calendar</div>
+            <div class="agent-pill">💪 Fitness</div>
+            <div class="agent-pill">⏰ Reminder</div>
+            <div class="agent-pill">💧 + custom</div>
+        </div>
+    </div>
+
+    <div class="install-section">
+        <h2>One command. Every platform.</h2>
+        <p>Runs on macOS, Linux, Docker. Starts at boot, auto-restarts on crash.</p>
+        <div class="code-block">
+            git clone https://github.com/nahommohan/agentos<br>
+            cd agentos && ./install/install.sh
+        </div>
+    </div>
+
+    <footer>
+        AgentOS v0.1.0 "genesis" &middot; MIT License &middot;
+        <a href="https://github.com/nahommohan/agentos">GitHub</a>
+    </footer>
+
+    <script>
+        // Try to fetch live stats
+        fetch('/api/health?token=' + new URLSearchParams(location.search).get('token'))
+            .then(r => r.json())
+            .then(h => {
+                document.getElementById('s-agents').textContent = h.agents || 13;
+            })
+            .catch(() => {});
+    </script>
+</body>
+</html>

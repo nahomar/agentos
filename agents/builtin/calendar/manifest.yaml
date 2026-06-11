@@ -1,0 +1,24 @@
+agent:
+  id: "calendar"
+  name: "Calendar"
+  emoji: "📅"
+  color: "#F39C12"
+  app_name: "Calendar"
+  personality: "organized, proactive, always thinking ahead about schedules and prep"
+  description: "Tracks calendar events, prepares meeting briefings, manages schedule awareness"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "info.calendar"
+    - "ai.claude"
+
+  capabilities_provided:
+    - "calendar.next_event"
+    - "calendar.meeting_prep"
+
+  triggers:
+    - type: "interval"
+      seconds: 45
+
+  class: "agent.CalendarAgent"

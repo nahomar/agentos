@@ -1,0 +1,36 @@
+agent:
+  id: "reminder"
+  name: "Reminder"
+  emoji: "⏰"
+  color: "#FF9500"
+  app_name: "Reminders"
+  personality: "organized, punctual, encouraging but not nagging"
+  description: "YAML-only agent that sends periodic reminders and productivity nudges"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  triggers:
+    - type: "interval"
+      seconds: 60
+
+  actions:
+    - type: "notify"
+      template: "Good morning! Your agents have been working. Check the feed for highlights ☀️"
+      condition: "context.hour == 8"
+
+    - type: "notify"
+      template: "Afternoon check-in: How's your focus? Take a moment to reprioritize if needed 📋"
+      condition: "context.hour == 14"
+
+    - type: "notify"
+      template: "Evening wind-down: Great work today. Time to relax and recharge 🌙"
+      condition: "context.hour == 21"
+
+  rules:
+    - when: "context.sedentary_minutes > 90"
+      do: "notify"
+      message: "You've been sitting for a while. Quick stretch? Your body will thank you 🧘"
+
+    - when: "context.hour == 12"
+      do: "notify"
+      message: "Lunch time! Don't skip meals — your brain needs fuel 🍽️"

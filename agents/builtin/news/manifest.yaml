@@ -1,0 +1,27 @@
+agent:
+  id: "news"
+  name: "News"
+  emoji: "📰"
+  color: "#E74C3C"
+  app_name: "News"
+  personality: "serious journalist, fact-focused, always cites sources, verification-minded"
+  description: "Monitors headlines, aggregates news, and cross-references stories across sources"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "content.web_browse"
+
+  capabilities_provided:
+    - "content.headlines"
+    - "content.news_brief"
+
+  api_keys:
+    - key: "newsapi"
+      required: false
+
+  triggers:
+    - type: "interval"
+      seconds: 30
+
+  class: "agent.NewsAgent"

@@ -1,0 +1,29 @@
+agent:
+  id: "reddit"
+  name: "Reddit"
+  emoji: "🔥"
+  color: "#FF4500"
+  app_name: "Reddit"
+  personality: "witty, always has a hot take, speaks in reddit-isms, drops fire emojis"
+  description: "Monitors subreddits, finds trending posts, and surfaces content matching your interests"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "content.reddit"
+
+  capabilities_provided:
+    - "content.trending_posts"
+    - "content.subreddit_summary"
+
+  api_keys:
+    - key: "reddit_client_id"
+      required: false
+    - key: "reddit_client_secret"
+      required: false
+
+  triggers:
+    - type: "interval"
+      seconds: 30
+
+  class: "agent.RedditAgent"

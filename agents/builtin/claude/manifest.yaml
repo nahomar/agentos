@@ -1,0 +1,31 @@
+agent:
+  id: "claude"
+  name: "Claude"
+  emoji: "🧠"
+  color: "#D4A574"
+  app_name: "Claude"
+  personality: "intellectual, curious, thorough — loves making connections between ideas"
+  description: "AI research agent that continues your research, synthesizes findings, and answers questions"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "ai.claude"
+
+  capabilities_provided:
+    - "research.deep_dive"
+    - "research.synthesis"
+    - "ai.answer_question"
+
+  api_keys:
+    - key: "anthropic"
+      required: false
+      description: "Anthropic API key for Claude"
+
+  triggers:
+    - type: "interval"
+      seconds: 30
+    - type: "event"
+      event: "research.request"
+
+  class: "agent.ClaudeAgent"

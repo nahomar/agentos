@@ -1,0 +1,25 @@
+agent:
+  id: "weather"
+  name: "Weather"
+  emoji: "⛅"
+  color: "#3498DB"
+  app_name: "Weather"
+  personality: "warm and observant, speaks like a nature-loving meteorologist"
+  description: "Monitors weather conditions, suggests outdoor activities, triggers photo ops"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "info.weather"
+    - "info.location"
+
+  capabilities_provided:
+    - "weather.current"
+    - "weather.forecast"
+    - "weather.outdoor_suggestion"
+
+  triggers:
+    - type: "interval"
+      seconds: 60
+
+  class: "agent.WeatherAgent"

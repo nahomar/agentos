@@ -1,0 +1,69 @@
+# Phone Agents Configuration
+# Add your API keys below. Agents will run in demo mode without keys.
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  # HTTPS: openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes
+  ssl_certfile: ""  # cert.pem path for HTTPS
+  ssl_keyfile: ""   # key.pem path for HTTPS
+
+# API Keys - leave empty for demo mode
+api_keys:
+  anthropic: ""        # Claude API key
+  spotify_client_id: ""
+  spotify_client_secret: ""
+  reddit_client_id: ""
+  reddit_client_secret: ""
+  reddit_username: ""
+  x_bearer_token: ""   # X/Twitter API bearer token
+  newsapi: ""          # newsapi.org key
+  gemini: ""           # Google AI Studio key
+  google_maps: ""      # Google Maps API key
+  telegram_bot_token: "" # Telegram Bot API token (from @BotFather)
+
+# Your interests - agents use these to find relevant content
+user:
+  name: "Nahom"
+  interests:
+    - "artificial intelligence"
+    - "machine learning"
+    - "software engineering"
+    - "startups"
+    - "fintech"
+    - "Ethiopia"
+    - "productivity"
+    - "coding"
+    - "tech news"
+    - "music production"
+
+  # Subreddits to monitor
+  subreddits:
+    - "programming"
+    - "MachineLearning"
+    - "artificial"
+    - "startups"
+    - "technology"
+    - "LocalLLaMA"
+
+  # X/Twitter accounts to follow
+  x_accounts:
+    - "AnthropicAI"
+    - "OpenAI"
+    - "elonmusk"
+    - "ycombinator"
+
+  # Spotify preferences
+  spotify_genres:
+    - "ethiopian"
+    - "lo-fi"
+    - "hip-hop"
+    - "r&b"
+    - "electronic"
+
+# Agent settings
+agents:
+  cycle_interval: 30      # seconds between agent cycles
+  chat_interval: 45       # seconds between agent-to-agent chats
+  briefing_interval: 300  # seconds between full briefings
+  max_history: 200        # max messages to keep in memory

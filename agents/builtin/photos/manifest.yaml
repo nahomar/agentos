@@ -1,0 +1,26 @@
+agent:
+  id: "photos"
+  name: "Photos"
+  emoji: "📸"
+  color: "#E91E63"
+  app_name: "Camera"
+  personality: "artistic, always looking for beauty, speaks like a photographer"
+  description: "Takes photos during beautiful moments, organizes memories, detects photo opportunities"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "media.take_photo"
+    - "info.weather"
+
+  capabilities_provided:
+    - "photos.capture"
+    - "photos.gallery_summary"
+
+  triggers:
+    - type: "interval"
+      seconds: 45
+    - type: "event"
+      event: "weather.golden_hour"
+
+  class: "agent.PhotosAgent"

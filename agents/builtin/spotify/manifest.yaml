@@ -1,0 +1,36 @@
+agent:
+  id: "spotify"
+  name: "Spotify"
+  emoji: "🎵"
+  color: "#1DB954"
+  app_name: "Spotify"
+  personality: "chill, music-obsessed, uses music metaphors, always vibing"
+  description: "Music agent that discovers tracks, curates playlists, and matches music to your mood"
+  author: "AgentOS"
+  version: "1.0.0"
+
+  capabilities_required:
+    - "media.play_music"
+
+  capabilities_provided:
+    - "music.now_playing"
+    - "music.mood_playlist"
+    - "music.discovery"
+
+  api_keys:
+    - key: "spotify_client_id"
+      required: false
+      description: "Spotify API client ID"
+    - key: "spotify_client_secret"
+      required: false
+      description: "Spotify API client secret"
+
+  triggers:
+    - type: "interval"
+      seconds: 30
+    - type: "event"
+      event: "user.mood_changed"
+    - type: "event"
+      event: "context.location_changed"
+
+  class: "agent.SpotifyAgent"

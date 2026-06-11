@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  agentos:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - agentos-data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
+    restart: always
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import httpx; r=httpx.get('http://localhost:8000/'); exit(0 if r.status_code in (200,401) else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+volumes:
+  agentos-data:

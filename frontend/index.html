@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Agents">
+    <meta name="theme-color" content="#000000">
+    <title>Phone Agents</title>
+    <link rel="stylesheet" href="/css/wallpaper.css">
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+
+    <div id="agent-layer"></div>
+
+    <div id="connection-overlay">
+        <svg id="connection-lines" width="100%" height="100%"></svg>
+    </div>
+
+    <div id="status-bar">
+        <div class="status-left">
+            <span id="connection-indicator" class="indicator disconnected"></span>
+            <span id="connection-text">Connecting...</span>
+        </div>
+        <div class="status-right">
+            <span id="agent-count">0 agents</span>
+        </div>
+    </div>
+
+    <div id="feed-container">
+        <div id="feed-handle">
+            <div class="handle-bar"></div>
+        </div>
+        <div id="feed-header">
+            <span class="feed-title">Activity Feed</span>
+            <span id="feed-badge" class="feed-badge hidden">0</span>
+        </div>
+        <div id="feed-scroll">
+            <div id="feed-items"></div>
+        </div>
+    </div>
+
+    <div id="agent-detail" class="hidden">
+        <div class="detail-backdrop"></div>
+        <div class="detail-card">
+            <div class="detail-header">
+                <div class="detail-avatar" id="detail-avatar"></div>
+                <div class="detail-info">
+                    <h2 id="detail-name"></h2>
+                    <p id="detail-app"></p>
+                </div>
+                <button id="detail-close">&times;</button>
+            </div>
+            <div id="detail-status" class="detail-status"></div>
+            <div id="detail-findings" class="detail-findings"></div>
+        </div>
+    </div>
+
+    <script src="/js/websocket.js"></script>
+    <script src="/js/agents-renderer.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
