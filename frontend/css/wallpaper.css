@@ -566,3 +566,106 @@ html, body {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 3px;
 }
+
+/* === COMMAND BAR === */
+#command-bar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(56px + var(--safe-bottom) + 10px);
+    z-index: 25;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#command-input {
+    flex: 1;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 15, 30, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+}
+
+#command-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+#command-input:focus {
+    border-color: rgba(155, 89, 182, 0.6);
+}
+
+#command-send {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: #9B59B6;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#command-send:active {
+    transform: scale(0.92);
+}
+
+/* === COMMAND TOASTS === */
+#command-toasts {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(56px + var(--safe-bottom) + 64px);
+    z-index: 24;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.command-toast {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #fff;
+    background: rgba(15, 15, 30, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: toast-in 0.25s ease-out;
+    transition: opacity 0.4s;
+}
+
+.command-toast.user {
+    align-self: flex-end;
+    background: rgba(155, 89, 182, 0.35);
+    border-color: rgba(155, 89, 182, 0.5);
+}
+
+.command-toast.assistant {
+    align-self: flex-start;
+}
+
+.command-toast.fading {
+    opacity: 0;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.confirm-params {
+    font-size: 12px;
+    opacity: 0.6;
+    word-break: break-all;
+}

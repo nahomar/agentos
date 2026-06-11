@@ -10,7 +10,9 @@ class AgentWebSocket {
 
     connect() {
         const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const url = `${protocol}//${location.host}/ws`;
+        const token = (typeof AgentAuth !== 'undefined') ? AgentAuth.token() : '';
+        const url = `${protocol}//${location.host}/ws` +
+            (token ? `?token=${encodeURIComponent(token)}` : '');
 
         try {
             this.ws = new WebSocket(url);

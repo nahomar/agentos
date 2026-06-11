@@ -309,6 +309,78 @@ class PermissionUI {
     }
 }
 
+// ── Command Bar (talk to your agents) ────────────────────────
+class CommandBar {
+    constructor(ws) {
+        this.ws = ws;
+        this.input = document.getElementById('command-input');
+        this.toasts = document.getElementById('command-toasts');
+
+        document.getElementById('command-bar').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = this.input.value.trim();
+            if (!text) return;
+            this.ws.send({ type: 'user_command', text });
+            this.showToast(`🗣 ${text}`, 'user');
+            this.input.value = '';
+        });
+    }
+
+    // Render an assistant reply; pop a confirm dialog for high-risk actions
+    handleReply(data) {
+        const meta = data.metadata || {};
+        this.showToast(data.content || '', 'assistant');
+        if (meta.requires_confirmation && meta.pending_id) {
+            this._confirmDialog(meta);
+        }
+    }
+
+    showToast(text, kind) {
+        const toast = document.createElement('div');
+        toast.className = `command-toast ${kind}`;
+        toast.textContent = text;
+        this.toasts.appendChild(toast);
+        while (this.toasts.children.length > 4) {
+            this.toasts.removeChild(this.toasts.firstChild);
+        }
+        setTimeout(() => {
+            toast.classList.add('fading');
+            setTimeout(() => toast.remove(), 400);
+        }, 7000);
+    }
+
+    _confirmDialog(meta) {
+        const esc = (s) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+        const params = meta.params ? JSON.stringify(meta.params) : '';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'permission-overlay';
+        overlay.innerHTML = `
+            <div class="permission-card">
+                <div class="permission-icon">🔐</div>
+                <h3>Confirm Action</h3>
+                <p><strong>${esc(meta.action_id || 'action')}</strong></p>
+                <p class="confirm-params">${esc(params)}</p>
+                <div class="permission-buttons">
+                    <button class="perm-deny">Cancel</button>
+                    <button class="perm-allow">Confirm</button>
+                </div>
+            </div>
+        `;
+
+        overlay.querySelector('.perm-allow').onclick = () => {
+            this.ws.send({ type: 'confirm_action', pending_id: meta.pending_id, approved: true });
+            overlay.remove();
+        };
+        overlay.querySelector('.perm-deny').onclick = () => {
+            this.ws.send({ type: 'confirm_action', pending_id: meta.pending_id, approved: false });
+            overlay.remove();
+        };
+
+        document.body.appendChild(overlay);
+    }
+}
+
 // ── Demo Mode ────────────────────────────────────────────────
 class DemoMode {
     constructor(app) {
@@ -393,6 +465,7 @@ class PhoneAgentsApp {
         this.ws = new AgentWebSocket();
         this.demo = new DemoMode(this);
         this.permissionUI = new PermissionUI(this.ws);
+        this.commandBar = new CommandBar(this.ws);
         this.contextReporter = null;
 
         this.renderer.onAgentTap = (name) => this.detail.open(name);
@@ -404,7 +477,7 @@ class PhoneAgentsApp {
 
     async _loadAgents() {
         try {
-            const resp = await fetch('/api/agents');
+            const resp = await AgentAuth.fetch('/api/agents');
             if (resp.ok) {
                 this.agentsList = await resp.json();
                 this.renderer.initAgents(this.agentsList);
@@ -469,6 +542,11 @@ class PhoneAgentsApp {
         // Check for permission requests
         if (metadata?.type === 'permission_request') {
             this.permissionUI.show(data);
+        }
+
+        // Assistant replies from the command pipeline
+        if (metadata?.type === 'command_reply') {
+            this.commandBar.handleReply(data);
         }
 
         switch (type) {
