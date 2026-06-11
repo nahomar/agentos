@@ -78,9 +78,12 @@ from backend.execution.speculative import (
 from backend.verification.layer import VerificationLayer
 from backend.identity.vault import IdentityVault
 
+from backend.semantic_bus.handlers import get_builtin_handlers
+
 semantic_bus = SemanticBus()
+_action_handlers = get_builtin_handlers(cap_config)
 for app_manifest in get_builtin_apps():
-    semantic_bus.register_app(app_manifest)
+    semantic_bus.register_app(app_manifest, _action_handlers)
 
 speculative_engine = SpeculativeEngine()
 speculative_engine.add_predictor(time_based_predictor)
@@ -155,6 +158,11 @@ async def lifespan(app: FastAPI):
         audit_log, checkpoint_mgr, context_engine, semantic_bus,
         verification_layer, identity_vault, ipc_broker,
     )
+
+    # Wire proactive rules to real capability execution (verified, then bus)
+    rules_evaluator.set_action_executor(semantic_bus, verification_layer)
+    # Wire speculative engine so high-confidence predictions actually pre-warm
+    speculative_engine.set_executor(semantic_bus.execute)
 
     # Start all subsystems
     await process_mgr.start_all(orchestrator.config.agents.cycle_interval)
@@ -275,6 +283,17 @@ async def websocket_endpoint(ws: WebSocket):
         logger.info("WebSocket client disconnected")
 
 
+async def _on_context_change():
+    """Refresh derived context and evaluate rules now, instead of waiting
+    up to 30s for the next timer tick. Weather/location sources cache, so
+    this is cheap."""
+    try:
+        await context_engine.update()
+        rules_evaluator.poke()
+    except Exception as e:
+        logger.error(f"Context-triggered evaluation error: {e}")
+
+
 async def _handle_ws_message(data: dict):
     msg_type = data.get("type", "")
 
@@ -286,6 +305,7 @@ async def _handle_ws_message(data: dict):
                        "sedentary_minutes", "unread_messages", "missed_calls"}
         safe_data = {k: v for k, v in ctx_data.items() if k in ALLOWED_CTX}
         await orchestrator.memory.update_user_context(**safe_data)
+        asyncio.create_task(_on_context_change())
 
     elif msg_type == "permission_response":
         request_id = data.get("request_id", "")
@@ -384,6 +404,7 @@ class ContextUpdate(BaseModel):
 async def update_context(ctx: ContextUpdate):
     update = {k: v for k, v in ctx.model_dump().items() if v is not None}
     await orchestrator.memory.update_user_context(**update)
+    asyncio.create_task(_on_context_change())
     return {"status": "ok"}
 
 

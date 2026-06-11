@@ -28,6 +28,12 @@ rules:
         operator: "gt"
         value: 15
     actions:
+      - type: "execute_capability"
+        params:
+          action_id: "settings.toggle_dnd"
+          action_params:
+            enabled: true
+            duration_minutes: 60
       - type: "suggest"
         params:
           message: "🎯 You're in the zone! I've silenced non-urgent updates. Keep going!"

@@ -22,16 +22,38 @@ class RulesEvaluator:
         self.rules: List[ProactiveRule] = []
         self._cooldowns: Dict[str, float] = {}  # rule_id -> last_triggered_time
         self._running = False
+        self._wake = None  # created in start() — py3.9 needs a running loop
+        self._last_poke = 0.0
+        self._semantic_bus = None
+        self._verification = None
 
         # Load built-in rules
         rules_path = Path(__file__).parent / "builtin_rules.yaml"
         self.rules = load_rules_from_yaml(rules_path)
         logger.info(f"Loaded {len(self.rules)} proactive rules")
 
+    def set_action_executor(self, semantic_bus, verification_layer=None):
+        """Wire the semantic bus (and optional verification layer) so
+        execute_capability actions can run real capabilities."""
+        self._semantic_bus = semantic_bus
+        self._verification = verification_layer
+
+    def poke(self):
+        """Wake the evaluation loop now (e.g., on a context change) instead
+        of waiting for the next timer tick. No-op before start()."""
+        if self._wake is None:
+            return
+        now = time.time()
+        if now - self._last_poke < 1.0:  # debounce bursts of context updates
+            return
+        self._last_poke = now
+        self._wake.set()
+
     async def start(self, context_getter, interval: int = 30):
-        """Start evaluating rules on a loop."""
+        """Start evaluating rules on a loop. Wakes early on poke()."""
         self._running = True
         self._context_getter = context_getter
+        self._wake = asyncio.Event()
         await asyncio.sleep(20)  # let context engine warm up
 
         while self._running:
@@ -40,10 +62,16 @@ class RulesEvaluator:
                 await self.evaluate(ctx)
             except Exception as e:
                 logger.error(f"Rules evaluation error: {e}")
-            await asyncio.sleep(interval)
+            try:
+                await asyncio.wait_for(self._wake.wait(), timeout=interval)
+            except asyncio.TimeoutError:
+                pass
+            self._wake.clear()
 
     async def stop(self):
         self._running = False
+        if self._wake is not None:
+            self._wake.set()
 
     async def evaluate(self, ctx: UserContext):
         ctx_dict = ctx.to_dict()
@@ -162,6 +190,9 @@ class RulesEvaluator:
                 },
             ))
 
+        elif action.type == "execute_capability":
+            await self._execute_capability(action, rule, ctx)
+
         elif action.type == "agent_task":
             agent = action.params.get("agent", "Claude")
             task = self._render(action.params.get("task", ""), ctx)
@@ -173,6 +204,73 @@ class RulesEvaluator:
                 content=task,
                 metadata={"emoji": "📋", "color": "#FFD700", "type": "agent_task"},
             ))
+
+    async def _execute_capability(self, action: Action, rule: ProactiveRule, ctx: dict):
+        if not self._semantic_bus:
+            logger.warning(
+                f"Rule {rule.name}: execute_capability requested but no semantic bus wired"
+            )
+            return
+
+        action_id = action.params.get("action_id", "")
+        raw_params = action.params.get("action_params", {}) or {}
+        params = {
+            k: self._render(v, ctx) if isinstance(v, str) else v
+            for k, v in raw_params.items()
+        }
+
+        # Deterministic safety net runs before anything touches the bus
+        if self._verification:
+            verdict = self._verification.verify(action_id, params, ctx)
+            if not verdict.passed:
+                reasons = "; ".join(f["reason"] for f in verdict.failures)
+                await self.bus.publish(Message(
+                    sender="System",
+                    recipient="user",
+                    type=MessageType.USER_ALERT,
+                    content=f"🛑 Blocked rule action {action_id}: {reasons}",
+                    metadata={
+                        "emoji": "🛑", "color": "#E74C3C",
+                        "type": "proactive_action_blocked", "rule_id": rule.id,
+                    },
+                ))
+                return
+
+        # user_confirmed=False: HIGH/CRITICAL actions still require explicit
+        # confirmation — the bus returns requires_confirmation and we surface it.
+        result = await self._semantic_bus.execute(
+            action_id, params,
+            agent_id=f"rule:{rule.id}",
+            user_confirmed=False,
+        )
+
+        if result.success:
+            await self.bus.publish(Message(
+                sender="System",
+                recipient="user",
+                type=MessageType.USER_ALERT,
+                content=f"⚡ {rule.name}: executed {action_id}",
+                metadata={
+                    "emoji": "⚡", "color": "#2ECC71",
+                    "type": "proactive_action", "rule_id": rule.id,
+                    "action_id": action_id, "result": result.data,
+                },
+            ))
+        elif result.error == "requires_confirmation":
+            await self.bus.publish(Message(
+                sender="System",
+                recipient="user",
+                type=MessageType.USER_ALERT,
+                content=f"🔐 {rule.name} wants to run {action_id} — confirm to proceed",
+                metadata={
+                    "emoji": "🔐", "color": "#F39C12",
+                    "type": "proactive_action_confirmation", "rule_id": rule.id,
+                    "action_id": action_id, "params": params,
+                    "risk_level": (result.data or {}).get("risk_level"),
+                },
+            ))
+        else:
+            logger.error(f"Rule {rule.name}: {action_id} failed — {result.error}")
 
     def _render(self, template: str, ctx: dict) -> str:
         try:
