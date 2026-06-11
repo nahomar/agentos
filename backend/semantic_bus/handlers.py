@@ -22,10 +22,45 @@ _notes: List[dict] = []
 _calendar_events: List[dict] = []
 
 
+def _device_first(device, method_name: str, fallback: Callable) -> Callable:
+    """Try the real device executor; fall back to the simulated handler on
+    any failure (app missing, permission denied, bad input)."""
+    async def handler(params: dict):
+        try:
+            result = await getattr(device, method_name)(params)
+            return {**result, "simulated": False, "device": "macos"}
+        except Exception as e:
+            logger.debug(f"Device exec {method_name} failed ({e}); using fallback")
+            return await fallback(params)
+    return handler
+
+
 def get_builtin_handlers(config: dict) -> Dict[str, Callable]:
-    """Build the action_id -> async handler map for all built-in apps."""
+    """Build the action_id -> async handler map for all built-in apps.
+
+    With config["device_execution"] set and a capable platform, device-bound
+    actions run for real on this machine instead of returning simulated data.
+    """
     spotify = _SpotifyHandlers(config)
 
+    handlers = _base_handlers(spotify)
+
+    if config.get("device_execution"):
+        from backend.semantic_bus.device_macos import (
+            MacDeviceExecutor, MAC_ACTION_METHODS,
+        )
+        if MacDeviceExecutor.available():
+            device = MacDeviceExecutor()
+            for action_id, method in MAC_ACTION_METHODS.items():
+                if action_id in handlers:
+                    handlers[action_id] = _device_first(device, method, handlers[action_id])
+            logger.info(
+                f"Real device execution enabled (macOS) for {len(MAC_ACTION_METHODS)} actions"
+            )
+    return handlers
+
+
+def _base_handlers(spotify) -> Dict[str, Callable]:
     return {
         # Spotify — real when OAuth'd, simulated otherwise
         "spotify.play_track": spotify.play_track,

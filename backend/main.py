@@ -82,6 +82,15 @@ from backend.identity.vault import IdentityVault
 
 from backend.semantic_bus.handlers import get_builtin_handlers
 
+# Real device execution on the host Mac (volume, music, maps, confirmed
+# iMessages). Disable with AGENTOS_DEVICE_EXECUTION=off
+import os as _os
+import sys as _sys
+cap_config["device_execution"] = (
+    _sys.platform == "darwin"
+    and _os.environ.get("AGENTOS_DEVICE_EXECUTION", "on") != "off"
+)
+
 semantic_bus = SemanticBus()
 _action_handlers = get_builtin_handlers(cap_config)
 for app_manifest in get_builtin_apps():

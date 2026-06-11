@@ -49,6 +49,14 @@ tap Confirm in the UI, reply `confirm <id>` in Telegram, or POST to
 Voice works out of the box in Safari/Chrome (Web Speech API): tap the mic,
 speak, and replies are spoken back.
 
+**On a Mac, 12 actions execute for real** — volume changes via osascript,
+music controls the running Spotify/Music app, maps and web searches open
+instantly, and confirmed messages send as actual iMessages. Replies show
+`✓ on this Mac` for real executions vs `(simulated)`. All AppleScript input
+is escape-sanitized against injection. Disable with
+`AGENTOS_DEVICE_EXECUTION=off`. On other platforms (or if an app is missing)
+actions gracefully fall back to simulated results.
+
 ---
 
 ## Quick Start (30 seconds)

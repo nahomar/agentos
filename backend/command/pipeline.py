@@ -306,7 +306,12 @@ class CommandPipeline:
     # === Reply formatting ===
 
     def _describe_result(self, action_id: str, data: Any) -> str:
-        sim = " (simulated)" if isinstance(data, dict) and data.get("simulated") else ""
+        sim = ""
+        if isinstance(data, dict):
+            if data.get("simulated"):
+                sim = " (simulated)"
+            elif data.get("device") == "macos":
+                sim = " ✓ on this Mac"
         if action_id == "calendar.get_upcoming" and isinstance(data, dict):
             n = data.get("count", 0)
             return f"You have {n} upcoming event{'s' if n != 1 else ''}.{sim}"
